@@ -267,7 +267,7 @@ class NodeConsensus:
         return sha256(combined)
 
 
-# Optional test helpers (do not run on production network)
+
 if __name__ == "__main__":
     logger.info("GAST core module loaded as script. This is a prototype module.")
     logger.info("Please run tests and use blspy keys to perform signature checks.")
