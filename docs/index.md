@@ -59,10 +59,11 @@ key features, and why it matters.
   - (TBD)  
 - **Why it matters:** Allows nodes to join the network securely and start from a known state.  
 
----
+- **Purpose:** Node bootstrap and handshake verification using Genesis hash, block number, and block hash to ensure chain integrity.  
+- **Why it matters:** Guarantees new nodes join securely and start from a trusted blockchain state.
 
 ### Notes
 
 - This index provides a **high-level overview**.  
 - For implementation details, refer to each module’s source code.  
-- As the project evolves, this document should be updated to reflect new modules and features.
+- As the project evolves, this document should be updated
