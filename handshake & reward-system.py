@@ -74,3 +74,5 @@ return {
 "reward_balance": balance,
 "master_hash": master_hash
 }
+
+
