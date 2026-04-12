@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DANIC — Blockless Self-Validation Consensus</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg: #03080f;
+    --panel: #060d1a;
+    --border: #0d2035;
+    --cyan: #00f5ff;
+    --green: #00e676;
+    --orange: #ff6d00;
+    --purple: #d500f9;
+    --gold: #ffd600;
+    --red: #ff1744;
+    --text: #cdd9e5;
+    --dim: #3a5060;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 30px 20px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.025) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 44px;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .header .eyebrow {
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--dim);
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(18px, 4.5vw, 34px);
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 30px rgba(0,245,255,0.3);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .header .tagline {
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 2px;
+  }
+
+  .header .tagline span {
+    color: var(--green);
+  }
+
+  /* ── COMPARISON BANNER ── */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 36px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .comp-box {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .comp-box.old {
+    border: 1px solid rgba(255,23,68,0.25);
+  }
+
+  .comp-box.new {
+    border: 1px solid rgba(0,230,118,0.25);
+  }
+
+  .comp-box .comp-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+  }
+
+  .comp-box.old .comp-label { color: var(--red); }
+  .comp-box.new .comp-label { color: var(--green); }
+
+  .comp-box .comp-title {
+    font-size: 13px;
+    margin-bottom: 10px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+  }
+  .comp-box.old .comp-title { color: rgba(255,23,68,0.8); }
+  .comp-box.new .comp-title { color: var(--green); }
+
+  .comp-box .comp-points {
+    list-style: none;
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 2;
+    text-align: left;
+  }
+
+  .comp-box.old .comp-points li::before { content: "✗ "; color: var(--red); }
+  .comp-box.new .comp-points li::before { content: "✓ "; color: var(--green); }
+
+  .vs-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--gold);
+    text-align: center;
+    text-shadow: 0 0 15px rgba(255,214,0,0.4);
+  }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    text-align: center;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.4s ease both;
+    opacity: 0;
+  }
+
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 36px;
+    animation: fadeUp 0.6s 0.5s ease both;
+    opacity: 0;
+  }
+
+  .flow-step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 16px;
+    align-items: stretch;
+    position: relative;
+  }
+
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 29px;
+    top: 60px;
+    bottom: -20px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--cyan), transparent);
+    opacity: 0.3;
+  }
+
+  .step-num {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    flex-shrink: 0;
+    margin-bottom: 20px;
+  }
+
+  .flow-step:nth-child(1) .step-num { background: rgba(0,245,255,0.1); border: 2px solid var(--cyan); color: var(--cyan); }
+  .flow-step:nth-child(2) .step-num { background: rgba(0,230,118,0.1); border: 2px solid var(--green); color: var(--green); }
+  .flow-step:nth-child(3) .step-num { background: rgba(255,109,0,0.1); border: 2px solid var(--orange); color: var(--orange); }
+  .flow-step:nth-child(4) .step-num { background: rgba(213,0,249,0.1); border: 2px solid var(--purple); color: var(--purple); }
+  .flow-step:nth-child(5) .step-num { background: rgba(255,214,0,0.1); border: 2px solid var(--gold); color: var(--gold); }
+
+  .step-content {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+
+  .flow-step:nth-child(1) .step-content { border: 1px solid rgba(0,245,255,0.15); }
+  .flow-step:nth-child(2) .step-content { border: 1px solid rgba(0,230,118,0.15); }
+  .flow-step:nth-child(3) .step-content { border: 1px solid rgba(255,109,0,0.15); }
+  .flow-step:nth-child(4) .step-content { border: 1px solid rgba(213,0,249,0.15); }
+  .flow-step:nth-child(5) .step-content { border: 1px solid rgba(255,214,0,0.15); }
+
+  .step-content .s-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .flow-step:nth-child(1) .s-title { color: var(--cyan); }
+  .flow-step:nth-child(2) .s-title { color: var(--green); }
+  .flow-step:nth-child(3) .s-title { color: var(--orange); }
+  .flow-step:nth-child(4) .s-title { color: var(--purple); }
+  .flow-step:nth-child(5) .s-title { color: var(--gold); }
+
+  .step-content .s-desc {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .step-content .s-note {
+    font-size: 10.5px;
+    color: var(--dim);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ── SELF-VALIDATION EXPLAINER ── */
+  .sv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s 0.8s ease both;
+    opacity: 0;
+  }
+
+  @media (max-width: 600px) {
+    .sv-grid { grid-template-columns: 1fr; }
+    .comparison { grid-template-columns: 1fr; }
+    .vs-badge { display: none; }
+  }
+
+  .sv-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+
+  .sv-icon {
+    font-size: 26px;
+    margin-bottom: 10px;
+  }
+
+  .sv-card .sv-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .sv-card .sv-desc {
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.6s 1s ease both;
+    opacity: 0;
+  }
+
+  .footer span { color: var(--cyan); }
+
+  .live-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    vertical-align: middle;
+    animation: blink 1.4s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="eyebrow">DANIC BLOCKCHAIN · BY MR. JAMMEH</div>
+    <h1>BLOCKLESS SELF-VALIDATION</h1>
+    <div class="tagline">No miners. No leaders. No waiting. <span>Every node validates itself.</span></div>
+  </div>
+
+  <!-- Comparison -->
+  <div class="comparison">
+    <div class="comp-box old">
+      <div class="comp-label">TRADITIONAL BLOCKCHAIN</div>
+      <div class="comp-title">Block-Based Consensus</div>
+      <ul class="comp-points">
+        <li>Needs global leader election</li>
+        <li>Transactions wait in mempool</li>
+        <li>Miners / validators required</li>
+        <li>Slow finality (seconds–minutes)</li>
+        <li>State bloat grows forever</li>
+      </ul>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="comp-box new">
+      <div class="comp-label">DANIC BLOCKCHAIN</div>
+      <div class="comp-title">Blockless Self-Validation</div>
+      <ul class="comp-points">
+        <li>No leader election needed</li>
+        <li>Instant per-account validation</li>
+        <li>Every node self-validates</li>
+        <li>VBlock finality every 20 seconds</li>
+        <li>Overwrite principle prevents bloat</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Flow -->
+  <div class="flow-title">HOW A TRANSACTION SELF-VALIDATES — STEP BY STEP</div>
+
+  <div class="flow">
+
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="s-title">SENDER BUILDS THE GAST PACKAGE</div>
+        <div class="s-desc">The sender constructs a transaction package locally — no mining pool, no mempool queue. It includes the amount, receiver, their current H1 hash, UTXO keys, and a proposed H3 state lock.</div>
+        <div class="s-note">→ Signs it with CRYSTALS-Dilithium3 post-quantum key before sending.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="s-title">NODE CHECKS H1 — LINEAGE LOCK (L1)</div>
+        <div class="s-desc">The receiving node checks that the transaction's previous H1 matches its own database record for that sender. This proves the transaction is built on the correct history — not a replay or fork.</div>
+        <div class="s-note">→ If H1 mismatches, the transaction is rejected instantly. No consensus needed.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="s-title">NODE CHECKS H2 — UTXO VIABILITY (L2)</div>
+        <div class="s-desc">The node verifies the referenced UTXO keys exist and that the total input value covers the amount plus the 1% platform fee. This confirms the sender actually has the funds they claim.</div>
+        <div class="s-note">→ No global balance lookup — every node holds the full account state locally.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="s-title">NODE CHECKS H3 — STATE INTEGRITY LOCK (L3)</div>
+        <div class="s-desc">The node independently recalculates the expected H3 hash using the sender's current state. If the proposed H3 in the package matches — the transaction is proven untampered and safe to commit.</div>
+        <div class="s-note">→ This is the double-spend killer. Any manipulation breaks H3 immediately.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="s-title">STATE QUEUED → VBLOCK ATOMIC COMMIT (H4)</div>
+        <div class="s-desc">Validated state is queued in a buffer. Every 20 seconds — or when 3,000 accounts are buffered — a VBlock is generated and committed atomically to LevelDB. Old UTXOs are deleted and replaced with the new H2 snapshot, preventing state bloat permanently.</div>
+        <div class="s-note">→ H4 seals the VBlock and chains it to the previous one. Any tampering breaks the full chain.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Self-validation cards -->
+  <div class="sv-grid">
+    <div class="sv-card">
+      <div class="sv-icon">⚡</div>
+      <div class="sv-title">NO GLOBAL CONSENSUS</div>
+      <div class="sv-desc">Each account validates itself using its own H1 lineage. No voting. No leader. No waiting for other nodes to agree.</div>
+    </div>
+    <div class="sv-card">
+      <div class="sv-icon">🔒</div>
+      <div class="sv-title">SELF-CONTAINED PROOF</div>
+      <div class="sv-desc">Every GAST package carries everything needed to verify it — H1, H2 snapshot, H3 lock, and PQ signature. The node needs no external information.</div>
+    </div>
+    <div class="sv-card">
+      <div class="sv-icon">🌐</div>
+      <div class="sv-title">INSTANT GOSSIP</div>
+      <div class="sv-desc">Once validated locally, the package is gossiped to peers via ZMQ. Each peer re-validates independently — no single point of trust.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="live-dot"></span>
+    <span>DANIC BLOCKCHAIN</span> · Blockless Self-Validation · Founder & CEO: Mr. Jammeh · 2026
+  </div>
+
+</div>
+</body>
+</html>
