@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DANIC H1–H4 Security Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg: #020810;
+    --panel: #050f1e;
+    --border: #0a2a4a;
+    --h1c: #00f5ff;
+    --h2c: #00e676;
+    --h3c: #ff6d00;
+    --h4c: #d500f9;
+    --pq: #ffd600;
+    --text: #cdd9e5;
+    --dim: #4a6070;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 30px 20px;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeDown 0.8s ease forwards;
+  }
+
+  .header .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 6px;
+    color: var(--dim);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--h1c), var(--h2c), var(--h3c), var(--h4c));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 3px;
+  }
+
+  /* Transaction flow at top */
+  .tx-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 36px;
+    animation: fadeDown 0.8s 0.2s ease both;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tx-node {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    position: relative;
+  }
+
+  .tx-node.active {
+    border-color: var(--h1c);
+    color: var(--h1c);
+    box-shadow: 0 0 12px rgba(0,245,255,0.15);
+  }
+
+  .tx-arrow {
+    color: var(--dim);
+    font-size: 18px;
+    padding: 0 4px;
+  }
+
+  /* Main layers grid */
+  .layers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 600px) {
+    .layers { grid-template-columns: 1fr; }
+  }
+
+  .layer-card {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  .layer-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .layer-card.h1 { border: 1px solid rgba(0,245,255,0.2); animation-delay: 0.3s; }
+  .layer-card.h1::before { background: var(--h1c); box-shadow: 0 0 10px var(--h1c); }
+
+  .layer-card.h2 { border: 1px solid rgba(0,230,118,0.2); animation-delay: 0.45s; }
+  .layer-card.h2::before { background: var(--h2c); box-shadow: 0 0 10px var(--h2c); }
+
+  .layer-card.h3 { border: 1px solid rgba(255,109,0,0.2); animation-delay: 0.6s; }
+  .layer-card.h3::before { background: var(--h3c); box-shadow: 0 0 10px var(--h3c); }
+
+  .layer-card.h4 { border: 1px solid rgba(213,0,249,0.2); animation-delay: 0.75s; }
+  .layer-card.h4::before { background: var(--h4c); box-shadow: 0 0 10px var(--h4c); }
+
+  .layer-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .h1 .layer-badge { color: var(--h1c); text-shadow: 0 0 20px rgba(0,245,255,0.5); }
+  .h2 .layer-badge { color: var(--h2c); text-shadow: 0 0 20px rgba(0,230,118,0.5); }
+  .h3 .layer-badge { color: var(--h3c); text-shadow: 0 0 20px rgba(255,109,0,0.5); }
+  .h4 .layer-badge { color: var(--h4c); text-shadow: 0 0 20px rgba(213,0,249,0.5); }
+
+  .layer-name {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  .layer-desc {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .layer-formula {
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--dim);
+    border-left: 3px solid;
+  }
+  .h1 .layer-formula { border-color: var(--h1c); color: rgba(0,245,255,0.7); }
+  .h2 .layer-formula { border-color: var(--h2c); color: rgba(0,230,118,0.7); }
+  .h3 .layer-formula { border-color: var(--h3c); color: rgba(255,109,0,0.7); }
+  .h4 .layer-formula { border-color: var(--h4c); color: rgba(213,0,249,0.7); }
+
+  .quantum-tag {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgba(0,245,255,0.08);
+    color: var(--h1c);
+    border: 1px solid rgba(0,245,255,0.2);
+  }
+
+  /* Validation flow */
+  .validation-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.6s 0.9s ease forwards;
+    flex-wrap: wrap;
+  }
+
+  .v-step {
+    flex: 1;
+    min-width: 140px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .v-step .v-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .v-step:nth-child(1) .v-label { color: var(--pq); }
+  .v-step:nth-child(2) .v-label { color: var(--h1c); }
+  .v-step:nth-child(3) .v-label { color: var(--h2c); }
+  .v-step:nth-child(4) .v-label { color: var(--h3c); }
+
+  .v-step .v-desc {
+    font-size: 10px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+
+  .v-connector {
+    display: flex;
+    align-items: center;
+    color: var(--dim);
+    font-size: 20px;
+    padding-top: 14px;
+  }
+
+  /* PQ banner */
+  .pq-banner {
+    background: linear-gradient(135deg, rgba(255,214,0,0.06), rgba(255,214,0,0.02));
+    border: 1px solid rgba(255,214,0,0.25);
+    border-radius: 10px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.6s 1.1s ease forwards;
+    margin-bottom: 24px;
+  }
+
+  .pq-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .pq-text .pq-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--pq);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .pq-text .pq-desc {
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.6;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    opacity: 0;
+    animation: fadeUp 0.6s 1.3s ease forwards;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer span {
+    color: var(--h1c);
+  }
+
+  /* Pulse dot */
+  .pulse {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--h2c);
+    margin-right: 6px;
+    animation: pulse 1.5s infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">Danic Blockchain — By Mr. Jammeh</div>
+    <h1>H1 → H4 SECURITY ARCHITECTURE</h1>
+    <div class="subtitle">Cryptographic State Engine · V3 Post-Quantum</div>
+  </div>
+
+  <!-- Transaction entry flow -->
+  <div class="tx-flow">
+    <div class="tx-node active">GAST PACKAGE</div>
+    <div class="tx-arrow">→</div>
+    <div class="tx-node active">PQ SIGNATURE</div>
+    <div class="tx-arrow">→</div>
+    <div class="tx-node">L1 CHECK</div>
+    <div class="tx-arrow">→</div>
+    <div class="tx-node">L2 CHECK</div>
+    <div class="tx-arrow">→</div>
+    <div class="tx-node">L3 CHECK</div>
+    <div class="tx-arrow">→</div>
+    <div class="tx-node">VBLOCK</div>
+  </div>
+
+  <!-- 4 Hash Layers -->
+  <div class="layers">
+
+    <div class="layer-card h1">
+      <div class="layer-badge">H1</div>
+      <div class="layer-name">Lineage Hash</div>
+      <div class="layer-desc">
+        A recursive hash of the account's full history. Every new state transition is cryptographically chained to the previous one. Cannot be forged without controlling the entire chain.
+      </div>
+      <div class="layer-formula">
+        H1 = SHA256(<br>
+        &nbsp;&nbsp;prev_H1 | tx_hash |<br>
+        &nbsp;&nbsp;sender | sequence<br>
+        )
+      </div>
+      <div class="quantum-tag">✓ SHA-256 — Quantum Resistant</div>
+    </div>
+
+    <div class="layer-card h2">
+      <div class="layer-badge">H2</div>
+      <div class="layer-name">State Snapshot</div>
+      <div class="layer-desc">
+        A canonical serialization of an account's current UTXO set. Captures the exact balance state at the moment of transaction. Prevents any hidden or duplicate funds.
+      </div>
+      <div class="layer-formula">
+        H2 = Serialize(<br>
+        &nbsp;&nbsp;sorted(UTXO_keys) +<br>
+        &nbsp;&nbsp;values<br>
+        ) → "key:val|key:val"
+      </div>
+      <div class="quantum-tag">✓ UTXO Model — Fork Safe</div>
+    </div>
+
+    <div class="layer-card h3">
+      <div class="layer-badge">H3</div>
+      <div class="layer-name">Integrity State-Lock</div>
+      <div class="layer-desc">
+        The primary double-spend protection. A domain-separated commitment that binds H1, H2, Sender ID, Sequence, and TX Hash into a single lock that cannot be replayed or manipulated.
+      </div>
+      <div class="layer-formula">
+        H3 = SHA256(<br>
+        &nbsp;&nbsp;DOMAIN | H1 | GENESIS |<br>
+        &nbsp;&nbsp;sender | seq | H2 | tx<br>
+        )
+      </div>
+      <div class="quantum-tag">✓ Anti Double-Spend Lock</div>
+    </div>
+
+    <div class="layer-card h4">
+      <div class="layer-badge">H4</div>
+      <div class="layer-name">VBlock Integrity Hash</div>
+      <div class="layer-desc">
+        Used for individual UTXO key generation and for the integrity hash of entire VBlocks. Chains all blocks together — any tampering with historical state breaks the H4 chain immediately.
+      </div>
+      <div class="layer-formula">
+        H4 = SHA256(<br>
+        &nbsp;&nbsp;tx_hash | output_index |<br>
+        &nbsp;&nbsp;output_value<br>
+        )
+      </div>
+      <div class="quantum-tag">✓ VBlock Chain Integrity</div>
+    </div>
+
+  </div>
+
+  <!-- Validation sequence -->
+  <div class="validation-row">
+    <div class="v-step">
+      <div class="v-label">PQ0</div>
+      <div class="v-desc">Dilithium3 signature verified against sender public key</div>
+    </div>
+    <div class="v-connector">→</div>
+    <div class="v-step">
+      <div class="v-label">L1</div>
+      <div class="v-desc">H1 lineage match — confirms chain continuity</div>
+    </div>
+    <div class="v-connector">→</div>
+    <div class="v-step">
+      <div class="v-label">L2</div>
+      <div class="v-desc">H2 UTXO viability — confirms sufficient funds exist</div>
+    </div>
+    <div class="v-connector">→</div>
+    <div class="v-step">
+      <div class="v-label">L3</div>
+      <div class="v-desc">H3 state lock — confirms no double-spend or divergence</div>
+    </div>
+  </div>
+
+  <!-- PQ Banner -->
+  <div class="pq-banner">
+    <div class="pq-icon">⚛</div>
+    <div class="pq-text">
+      <div class="pq-title">V3 — POST-QUANTUM UPGRADE ACTIVE</div>
+      <div class="pq-desc">
+        Transaction signing layer upgraded from secp256k1 (Ethereum) to CRYSTALS-Dilithium3 — NIST FIPS 204 (2024 Standard). Resistant to Shor's Algorithm on quantum computers. H1–H4 hash chain was already quantum-resistant via SHA-256.
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="pulse"></span>
+    <span>DANIC BLOCKCHAIN</span> · Founder & CEO: Mr. Jammeh · V3 Architecture · 2026
+  </div>
+
+</div>
+</body>
+</html>
